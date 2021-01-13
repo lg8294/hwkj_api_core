@@ -5,3 +5,4 @@ export 'src/api_config.dart';
 export 'src/api_result.dart';
 export 'src/http_client_factory.dart';
 export 'src/auth/auth_interceptor.dart';
+export 'src/models/ajax_result_entity.dart';
