@@ -3,6 +3,17 @@ import 'package:flutter/foundation.dart';
 import 'package:hwkj_api_core/hwkj_api_core.dart';
 import 'package:oauth2/oauth2.dart';
 
+abstract class CredentialStorage {
+  Credentials get credentials;
+
+  set credentials(Credentials value) {}
+}
+
+abstract class App {
+  /// 设置登录状态失效
+  setLoginStateInvalid();
+}
+
 class AuthInterceptor extends Interceptor {
   Dio _currentDio;
   bool _locked = false;
@@ -135,15 +146,4 @@ class UserAuthInterceptor extends Interceptor {
     _retryCount = 0;
     return super.onResponse(response);
   }
-}
-
-abstract class CredentialStorage {
-  Credentials get credentials;
-
-  set credentials(Credentials value) {}
-}
-
-abstract class App {
-  /// 设置登录状态失效
-  setLoginStateInvalid();
 }
