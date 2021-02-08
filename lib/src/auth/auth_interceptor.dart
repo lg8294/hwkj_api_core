@@ -76,12 +76,25 @@ class UserAuthInterceptor extends Interceptor {
     if (_credentialStorage.credentials.isExpired) {
       _currentDio.lock();
       if (_credentialStorage.credentials.canRefresh) {
-        _credentialStorage.credentials =
-            await _credentialStorage.credentials.refresh(
-          identifier: _apiConfig.appKey,
-          secret: _apiConfig.appSecret,
-        );
-        _currentDio.unlock();
+        Credentials credentials;
+        try {
+          credentials = await _credentialStorage.credentials.refresh(
+            identifier: _apiConfig.appKey,
+            secret: _apiConfig.appSecret,
+          );
+        } catch (e, trace) {
+          print(e);
+          print(trace);
+        }
+        if (credentials != null) {
+          _credentialStorage.credentials = credentials;
+          _currentDio.unlock();
+        } else {
+          _currentDio.clear();
+          _currentDio.unlock();
+          _app?.setLoginStateInvalid();
+          return _currentDio.reject("登录失效，请重新登录");
+        }
       } else {
         _currentDio.clear();
         _currentDio.unlock();
@@ -111,10 +124,16 @@ class UserAuthInterceptor extends Interceptor {
       _retryCount++;
       if (_credentialStorage.credentials.canRefresh) {
         _currentDio.lock();
-        final credential = await _credentialStorage.credentials.refresh(
-          identifier: _apiConfig.appKey,
-          secret: _apiConfig.appSecret,
-        );
+        Credentials credential;
+        try {
+          credential = await _credentialStorage.credentials.refresh(
+            identifier: _apiConfig.appKey,
+            secret: _apiConfig.appSecret,
+          );
+        } catch (e, trace) {
+          print(e);
+          print(trace);
+        }
 
         if (credential != null) {
           _credentialStorage.credentials = credential;
@@ -131,6 +150,7 @@ class UserAuthInterceptor extends Interceptor {
             onReceiveProgress: requestOption.onReceiveProgress,
           );
         } else {
+          _currentDio.clear();
           _currentDio.unlock();
           _app?.setLoginStateInvalid();
           return _currentDio.reject("登录失效，请重新登录");
