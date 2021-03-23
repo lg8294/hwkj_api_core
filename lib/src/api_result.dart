@@ -7,6 +7,8 @@ class APIResult<T> {
   final String debugMsg;
   final bool success;
 
+  bool get failure => success != true;
+
   APIResult(
     this.success, {
     this.data,
