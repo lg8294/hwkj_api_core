@@ -62,8 +62,22 @@ ApiConfig patientApiConfigUat = ApiConfig(
 );
 
 /// 医生端开发环境配置
-ApiConfig doctorApiConfig = ApiConfig(
+ApiConfig doctorApiConfigDev = ApiConfig(
   baseUrl: "http://192.168.1.251:30289",
+  appKey: "b949e291-15b5-11ea-9583-000c29026700",
+  appSecret: "secret",
+);
+
+/// 医生端fat环境配置
+ApiConfig doctorApiConfigFat = ApiConfig(
+  baseUrl: "https://api.fat.kangfx.com:30561",
+  appKey: "b949e291-15b5-11ea-9583-000c29026700",
+  appSecret: "secret",
+);
+
+/// 医生端uat环境配置
+ApiConfig doctorApiConfigUat = ApiConfig(
+  baseUrl: 'https://api-uat.kangfx.com',
   appKey: "b949e291-15b5-11ea-9583-000c29026700",
   appSecret: "secret",
 );
