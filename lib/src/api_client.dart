@@ -24,7 +24,10 @@ abstract class ApiClient {
     _httpClient.options.validateStatus = validateStatus200_401;
   }
 
-  APIResult<T> handleError<T>(
+  APIResult<T> handleError<T>(e, {StackTrace trace}) =>
+      globalHandleError(e, trace: trace);
+
+  static APIResult<T> globalHandleError<T>(
     e, {
     StackTrace trace,
   }) {
@@ -67,7 +70,10 @@ abstract class ApiClient {
     return APIResult<T>.failure(msg, debugMsg);
   }
 
-  AjaxResultEntity parseResponseData(Response response) {
+  AjaxResultEntity parseResponseData(Response response) =>
+      globalParseResponseData(response);
+
+  static AjaxResultEntity globalParseResponseData(Response response) {
     if (response.data is Map) {
       final resultMap = response.data as Map;
       // 标准数据模型
