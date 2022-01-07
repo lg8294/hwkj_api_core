@@ -14,6 +14,20 @@ abstract class App {
   setLoginStateInvalid();
 }
 
+class AuthenticationHttpClientDelegate {
+  final Function lock;
+  final Function unlock;
+  final Function onRefreshTokenFailure;
+  final Dio currentHttpClient;
+
+  const AuthenticationHttpClientDelegate({
+    @required this.lock,
+    @required this.unlock,
+    @required this.onRefreshTokenFailure,
+    @required this.currentHttpClient,
+  });
+}
+
 class AuthInterceptor extends Interceptor {
   Dio _currentDio;
   bool _locked = false;
@@ -46,35 +60,34 @@ class AuthInterceptor extends Interceptor {
 }
 
 class UserAuthInterceptor extends Interceptor {
-  final Dio _currentDio;
   final CredentialStorage _credentialStorage;
   final ApiConfig _apiConfig;
   final App _app;
+  final AuthenticationHttpClientDelegate httpClientDelegate;
 
   final int maxRetryCount;
   int _retryCount = 0;
 
   UserAuthInterceptor(
     this._credentialStorage,
-    this._apiConfig, {
-    @required Dio currentDio,
-    this.maxRetryCount = 3,
+    this._apiConfig,
+    this.httpClientDelegate, {
+    this.maxRetryCount = 1,
     App app,
   })  : assert(_credentialStorage != null),
         assert(_apiConfig != null),
-        assert(currentDio != null),
+        assert(httpClientDelegate != null),
         assert(maxRetryCount != null),
-        _currentDio = currentDio,
         _app = app;
 
   @override
   Future onRequest(RequestOptions options) async {
     if (_credentialStorage.credentials == null) {
       _app?.setLoginStateInvalid();
-      return _currentDio.reject("登录失效，请重新登录");
+      throw '请登录';
     }
     if (_credentialStorage.credentials.isExpired) {
-      _currentDio.lock();
+      httpClientDelegate.lock.call();
       if (_credentialStorage.credentials.canRefresh) {
         Credentials credentials;
         try {
@@ -88,18 +101,18 @@ class UserAuthInterceptor extends Interceptor {
         }
         if (credentials != null) {
           _credentialStorage.credentials = credentials;
-          _currentDio.unlock();
+          httpClientDelegate.unlock.call();
         } else {
-          _currentDio.clear();
-          _currentDio.unlock();
+          httpClientDelegate.onRefreshTokenFailure.call();
+          httpClientDelegate.unlock.call();
           _app?.setLoginStateInvalid();
-          return _currentDio.reject("登录失效，请重新登录");
+          throw '登录信息已失效，请重新登录';
         }
       } else {
-        _currentDio.clear();
-        _currentDio.unlock();
+        httpClientDelegate.onRefreshTokenFailure.call();
+        httpClientDelegate.unlock.call();
         _app?.setLoginStateInvalid();
-        return _currentDio.reject("登录过期，请重新登录");
+        throw '登录信息已失效，请重新登录';
       }
     }
 
@@ -113,17 +126,17 @@ class UserAuthInterceptor extends Interceptor {
   @override
   Future onResponse(Response response) async {
     if (response.statusCode == 401) {
-      print('无权限，需要刷新token');
+      print('未授权（401）');
 
       if (_retryCount >= maxRetryCount) {
         _retryCount = 0;
         _app?.setLoginStateInvalid();
-        return _currentDio.reject("token过期，请重新登录");
+        throw '登录信息已失效，请重新登录';
       }
 
       _retryCount++;
       if (_credentialStorage.credentials.canRefresh) {
-        _currentDio.lock();
+        httpClientDelegate.lock.call();
         Credentials credential;
         try {
           credential = await _credentialStorage.credentials.refresh(
@@ -137,11 +150,11 @@ class UserAuthInterceptor extends Interceptor {
 
         if (credential != null) {
           _credentialStorage.credentials = credential;
-          _currentDio.unlock();
+          httpClientDelegate.unlock.call();
 
           /// 重新发送请求
           final requestOption = response.request;
-          return _currentDio.request(
+          return httpClientDelegate.currentHttpClient.request(
             requestOption.path,
             data: requestOption.data,
             cancelToken: requestOption.cancelToken,
@@ -150,16 +163,16 @@ class UserAuthInterceptor extends Interceptor {
             onReceiveProgress: requestOption.onReceiveProgress,
           );
         } else {
-          _currentDio.clear();
-          _currentDio.unlock();
+          httpClientDelegate.onRefreshTokenFailure.call();
+          httpClientDelegate.unlock.call();
           _app?.setLoginStateInvalid();
-          return _currentDio.reject("登录失效，请重新登录");
+          throw '登录信息已失效，请重新登录';
         }
       } else {
-        _currentDio.clear();
-        _currentDio.unlock();
+        httpClientDelegate.onRefreshTokenFailure.call();
+        httpClientDelegate.unlock.call();
         _app?.setLoginStateInvalid();
-        return _currentDio.reject("登录过期，请重新登录");
+        throw '登录信息已失效，请重新登录';
       }
     }
 
