@@ -18,16 +18,16 @@ class APIResult<T> {
 
   APIResult.success(this.data, {this.msg, this.debugMsg}) : success = true;
 
-  APIResult.failure(this.msg, this.debugMsg)
+  APIResult.failure(this.msg, [this.debugMsg])
       : success = false,
         data = null;
 
-  APIResult.failureWithRequestError(this.debugMsg)
+  APIResult.failureWithRequestError([this.debugMsg])
       : success = false,
         data = null,
         msg = requestError;
 
-  static String requestError = '请求出错';
+  static const String requestError = '请求出错';
 
   @override
   String toString() {
