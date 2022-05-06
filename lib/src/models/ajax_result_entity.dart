@@ -6,7 +6,7 @@ class AjaxResultEntity with JsonConvert<AjaxResultEntity> {
   @JSONField(name: "Type")
   int type;
 
-  @JSONField(name: "Message")
+  @JSONField(name: "Content")
   String content;
 
   @JSONField(name: "Data")
