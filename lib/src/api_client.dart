@@ -53,18 +53,19 @@ abstract class ApiClient {
           msg = "取消";
           break;
         case DioErrorType.DEFAULT:
-          msg = e.error.toString();
+          msg = '未知错误';
+          debugMsg = 'error:${e.error}';
           if (e.error is Error) {
-            debugMsg = (e.error as Error).stackTrace.toString();
+            debugMsg += '\n' + 'stackTrace:${(e.error as Error).stackTrace}';
           }
           break;
       }
     } else if (e is Error) {
-      msg = e.toString();
-      debugMsg = e.stackTrace.toString();
+      msg = '未知错误';
+      debugMsg = 'error:$e' + '\n' + 'stackTrace:${e.stackTrace.toString()}';
     } else {
-      msg = e.toString();
-      debugMsg = trace?.toString();
+      msg = '未知错误';
+      debugMsg = 'error:$e' + '\n' + 'stackTrace:${trace?.toString()}';
     }
 
     return APIResult<T>.failure(msg, debugMsg);
