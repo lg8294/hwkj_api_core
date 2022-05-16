@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:hwkj_api_core/generated/json/base/json_convert_content.dart';
+import 'package:hwkj_api_core/src/models/response_result_entity.dart';
 
 import 'api_result.dart';
 import 'models/ajax_result_entity.dart';
@@ -46,8 +47,15 @@ abstract class ApiClient {
           msg = "接收数据超时";
           break;
         case DioErrorType.RESPONSE:
-          msg = e.error;
-          debugMsg = e.response.data.toString();
+          try {
+            final responseResult =
+                JsonConvert.fromJsonAsT<ResponseResultEntity>(e.response.data);
+            msg = responseResult.message;
+            debugMsg = responseResult.developerMessage?.toString();
+          } catch (_) {
+            msg = e.error;
+            debugMsg = e.response.data?.toString();
+          }
           break;
         case DioErrorType.CANCEL:
           msg = "取消";
