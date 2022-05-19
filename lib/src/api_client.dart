@@ -3,6 +3,7 @@ import 'package:hwkj_api_core/generated/json/base/json_convert_content.dart';
 import 'package:hwkj_api_core/src/models/response_result_entity.dart';
 
 import 'api_result.dart';
+import 'constants.dart';
 import 'models/ajax_result_entity.dart';
 
 ValidateStatus validateStatus200 = (int status) {
@@ -61,7 +62,7 @@ abstract class ApiClient {
           msg = "取消";
           break;
         case DioErrorType.DEFAULT:
-          msg = '未知错误';
+          msg = network_error_tip;
           debugMsg = 'error:${e.error}';
           if (e.error is Error) {
             debugMsg += '\n' + 'stackTrace:${(e.error as Error).stackTrace}';
@@ -69,10 +70,10 @@ abstract class ApiClient {
           break;
       }
     } else if (e is Error) {
-      msg = '未知错误';
+      msg = system_error_tip;
       debugMsg = 'error:$e' + '\n' + 'stackTrace:${e.stackTrace.toString()}';
     } else {
-      msg = '未知错误';
+      msg = system_error_tip;
       debugMsg = 'error:$e' + '\n' + 'stackTrace:${trace?.toString()}';
     }
 
