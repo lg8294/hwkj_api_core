@@ -54,7 +54,7 @@ abstract class ApiClient {
             msg = responseResult.message;
             debugMsg = responseResult.developerMessage?.toString();
           } catch (_) {
-            msg = e.error;
+            msg = system_error_tip;
             debugMsg = e.response.data?.toString();
           }
           break;
