@@ -208,3 +208,51 @@ Future<Client> resourceOwnerVerifyCodeGrant(Uri authorizationEndpoint,
       httpClient: httpClient,
       onCredentialsRefreshed: onCredentialsRefreshed);
 }
+
+Future<Client> resourceOwnerOneClickGrant(
+    Uri authorizationEndpoint, String loginToken,
+    {String identifier,
+    String secret,
+    Iterable<String> scopes,
+    bool basicAuth = true,
+    CredentialsRefreshedCallback onCredentialsRefreshed,
+    http.Client httpClient,
+    String delimiter,
+    Map<String, dynamic> Function(MediaType contentType, String body)
+        getParameters}) async {
+  delimiter ??= ' ';
+  var startTime = DateTime.now();
+
+  var body = {
+    'grant_type': 'oneclicklogin',
+    'loginToken': loginToken,
+  };
+
+  var headers = <String, String>{};
+
+  if (identifier != null) {
+    if (basicAuth) {
+      headers['Authorization'] = _basicAuthHeader(identifier, secret);
+    } else {
+      body['client_id'] = identifier;
+      if (secret != null) body['client_secret'] = secret;
+    }
+  }
+
+  if (scopes != null && scopes.isNotEmpty) {
+    body['scope'] = scopes.join(delimiter);
+  }
+
+  httpClient ??= http.Client();
+  var response = await httpClient.post(authorizationEndpoint,
+      headers: headers, body: body);
+
+  var credentials = await _handleAccessTokenResponse(
+      response, authorizationEndpoint, startTime, scopes, delimiter,
+      getParameters: getParameters);
+  return Client(credentials,
+      identifier: identifier,
+      secret: secret,
+      httpClient: httpClient,
+      onCredentialsRefreshed: onCredentialsRefreshed);
+}
