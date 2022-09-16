@@ -2,19 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:hwkj_api_core/hwkj_api_core.dart';
 import 'package:oauth_dio/oauth_dio.dart' hide BearerInterceptor;
 
-import '../api_config.dart';
-import 'my_oauth_token.dart';
-
 export 'my_oauth_token.dart';
 
 class AuthApi {
   static OAuth getOAuth({
-    ApiConfig config,
-    OAuthStorage oAuthStorage,
-    Dio client,
+    required ApiConfig config,
+    required OAuthStorage oAuthStorage,
+    required Dio client,
   }) {
-    config ??= defaultApiConfig;
-
     var authorizationEndpoint;
     var identifier;
     var secret;
@@ -35,7 +30,7 @@ class AuthApi {
 //      final oauthToken = client.credentials;
 
     final oauth = OAuth(
-      dio: client ?? HttpClientFactory.generalHttpClient(),
+      dio: client,
       storage: oAuthStorage,
       tokenUrl: authorizationEndpoint.toString(),
       clientId: identifier,

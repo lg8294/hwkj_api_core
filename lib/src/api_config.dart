@@ -4,10 +4,10 @@ class ApiConfig {
   final String baseUrl;
 
   ///
-  final String appKey;
+  final String? appKey;
 
   ///
-  final String appSecret;
+  final String? appSecret;
 
   /// 授权地址
   String get authorizationEndpoint {
@@ -15,7 +15,7 @@ class ApiConfig {
   }
 
   const ApiConfig({
-    this.baseUrl,
+    required this.baseUrl,
     this.appKey,
     this.appSecret,
   });

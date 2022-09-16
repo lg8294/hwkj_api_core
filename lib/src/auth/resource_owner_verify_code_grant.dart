@@ -15,13 +15,13 @@ String _basicAuthHeader(String identifier, String secret) {
 
 /// The type of a callback that parses parameters from an HTTP response.
 typedef _GetParameters = Map<String, dynamic> Function(
-    MediaType contentType, String body);
+    MediaType? contentType, String body);
 
 /// Parses parameters from a response with a JSON body, as per the [OAuth2
 /// spec][].
 ///
 /// [OAuth2 spec]: https://tools.ietf.org/html/rfc6749#section-5.1
-Map<String, dynamic> _parseJsonParameters(MediaType contentType, String body) {
+Map<String, dynamic> _parseJsonParameters(MediaType? contentType, String body) {
   // The spec requires a content-type of application/json, but some endpoints
   // (e.g. Dropbox) serve it as text/javascript instead.
   if (contentType == null ||
@@ -46,15 +46,16 @@ Credentials _handleAccessTokenResponse(
     http.Response response,
     Uri tokenEndpoint,
     DateTime startTime,
-    List<String> scopes,
+    List<String>? scopes,
     String delimiter,
-    {Map<String, dynamic> Function(MediaType contentType, String body)
+    {Map<String, dynamic> Function(MediaType contentType, String body)?
         getParameters}) {
   getParameters ??= _parseJsonParameters;
 
   try {
     if (response.statusCode != 200) {
-      _handleErrorResponse(response, tokenEndpoint, getParameters);
+      _handleErrorResponse(response, tokenEndpoint,
+          getParameters as Map<String, dynamic> Function(MediaType?, String));
     }
 
     var contentTypeString = response.headers['content-type'];
@@ -97,7 +98,7 @@ Credentials _handleAccessTokenResponse(
       }
     }
 
-    var scope = parameters['scope'] as String;
+    var scope = parameters['scope'] as String?;
     if (scope != null) scopes = scope.split(delimiter);
 
     var expiration = expiresIn == null
@@ -125,8 +126,9 @@ void _handleErrorResponse(
   // off-spec.
   if (response.statusCode != 400 && response.statusCode != 401) {
     var reason = '';
-    if (response.reasonPhrase != null && response.reasonPhrase.isNotEmpty) {
-      ' ${response.reasonPhrase}';
+    var reasonPhrase = response.reasonPhrase;
+    if (reasonPhrase != null && reasonPhrase.isNotEmpty) {
+      reason = ' $reasonPhrase';
     }
     throw FormatException('OAuth request for "$tokenEndpoint" failed '
         'with status ${response.statusCode}$reason.\n\n${response.body}');
@@ -161,14 +163,14 @@ void _handleErrorResponse(
 
 Future<Client> resourceOwnerVerifyCodeGrant(Uri authorizationEndpoint,
     String phone, String verifyCode, String verifyCodeId,
-    {String identifier,
-    String secret,
-    Iterable<String> scopes,
+    {String? identifier,
+    String? secret,
+    Iterable<String>? scopes,
     bool basicAuth = true,
-    CredentialsRefreshedCallback onCredentialsRefreshed,
-    http.Client httpClient,
-    String delimiter,
-    Map<String, dynamic> Function(MediaType contentType, String body)
+    CredentialsRefreshedCallback? onCredentialsRefreshed,
+    http.Client? httpClient,
+    String? delimiter,
+    Map<String, dynamic> Function(MediaType contentType, String body)?
         getParameters}) async {
   delimiter ??= ' ';
   var startTime = DateTime.now();
@@ -184,7 +186,7 @@ Future<Client> resourceOwnerVerifyCodeGrant(Uri authorizationEndpoint,
 
   if (identifier != null) {
     if (basicAuth) {
-      headers['Authorization'] = _basicAuthHeader(identifier, secret);
+      headers['Authorization'] = _basicAuthHeader(identifier, secret!);
     } else {
       body['client_id'] = identifier;
       if (secret != null) body['client_secret'] = secret;
@@ -199,8 +201,8 @@ Future<Client> resourceOwnerVerifyCodeGrant(Uri authorizationEndpoint,
   var response = await httpClient.post(authorizationEndpoint,
       headers: headers, body: body);
 
-  var credentials = await _handleAccessTokenResponse(
-      response, authorizationEndpoint, startTime, scopes, delimiter,
+  var credentials = _handleAccessTokenResponse(response, authorizationEndpoint,
+      startTime, scopes as List<String>?, delimiter,
       getParameters: getParameters);
   return Client(credentials,
       identifier: identifier,
@@ -211,14 +213,14 @@ Future<Client> resourceOwnerVerifyCodeGrant(Uri authorizationEndpoint,
 
 Future<Client> resourceOwnerOneClickGrant(
     Uri authorizationEndpoint, String loginToken,
-    {String identifier,
-    String secret,
-    Iterable<String> scopes,
+    {String? identifier,
+    String? secret,
+    Iterable<String>? scopes,
     bool basicAuth = true,
-    CredentialsRefreshedCallback onCredentialsRefreshed,
-    http.Client httpClient,
-    String delimiter,
-    Map<String, dynamic> Function(MediaType contentType, String body)
+    CredentialsRefreshedCallback? onCredentialsRefreshed,
+    http.Client? httpClient,
+    String? delimiter,
+    Map<String, dynamic> Function(MediaType contentType, String body)?
         getParameters}) async {
   delimiter ??= ' ';
   var startTime = DateTime.now();
@@ -232,7 +234,7 @@ Future<Client> resourceOwnerOneClickGrant(
 
   if (identifier != null) {
     if (basicAuth) {
-      headers['Authorization'] = _basicAuthHeader(identifier, secret);
+      headers['Authorization'] = _basicAuthHeader(identifier, secret!);
     } else {
       body['client_id'] = identifier;
       if (secret != null) body['client_secret'] = secret;
@@ -247,12 +249,19 @@ Future<Client> resourceOwnerOneClickGrant(
   var response = await httpClient.post(authorizationEndpoint,
       headers: headers, body: body);
 
-  var credentials = await _handleAccessTokenResponse(
-      response, authorizationEndpoint, startTime, scopes, delimiter,
-      getParameters: getParameters);
-  return Client(credentials,
-      identifier: identifier,
-      secret: secret,
-      httpClient: httpClient,
-      onCredentialsRefreshed: onCredentialsRefreshed);
+  var credentials = _handleAccessTokenResponse(
+    response,
+    authorizationEndpoint,
+    startTime,
+    scopes as List<String>?,
+    delimiter,
+    getParameters: getParameters,
+  );
+  return Client(
+    credentials,
+    identifier: identifier,
+    secret: secret,
+    httpClient: httpClient,
+    onCredentialsRefreshed: onCredentialsRefreshed,
+  );
 }

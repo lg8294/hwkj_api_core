@@ -2,9 +2,9 @@ import 'dart:convert';
 
 /// 业务层调用接口返回数据用这个包装，统一处理成功和失败
 class APIResult<T> {
-  final T data;
-  final String msg;
-  final String debugMsg;
+  final T? data;
+  final String? msg;
+  final String? debugMsg;
   final bool success;
 
   bool get failure => success != true;

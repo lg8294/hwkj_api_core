@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hwkj_api_core/hwkj_api_core.dart';
-import 'package:hwkj_api_core/src/auth/auth_api.dart';
-import 'package:oauth2/oauth2.dart';
 import 'package:oauth_dio/oauth_dio.dart';
 
 void main() {
@@ -44,6 +42,7 @@ void main() {
     OAuth oauth = AuthApi.getOAuth(
       client: authHttpClient,
       config: apiConfig,
+      oAuthStorage: OAuthMemoryStorage(),
     );
     await oauth.requestToken(PasswordGrant(
       username: userName,
@@ -67,6 +66,7 @@ void main() {
     OAuth oauth = AuthApi.getOAuth(
       client: authHttpClient,
       config: apiConfig,
+      oAuthStorage: OAuthMemoryStorage(),
     );
     final authToken = await oauth.requestToken(PasswordGrant(
       username: userName,
@@ -75,7 +75,7 @@ void main() {
     ));
 
     /// MyOAuthToken 序列化和反序列化
-    MyOAuthToken mainToken = authToken;
+    MyOAuthToken mainToken = authToken as MyOAuthToken;
     final json = jsonEncode(authToken);
     final _token = MyOAuthToken.fromJson(jsonDecode(json));
     expect(_token.accessToken, equals(mainToken.accessToken));

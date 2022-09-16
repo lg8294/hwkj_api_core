@@ -2,16 +2,16 @@ import 'package:dio/dio.dart';
 import 'package:oauth_dio/oauth_dio.dart';
 
 class MyOAuthToken extends OAuthToken {
-  final String idToken;
-  final int expiresIn;
-  final String tokenType;
-  final String scope;
+  final String? idToken;
+  final int? expiresIn;
+  final String? tokenType;
+  final String? scope;
 
-  final DateTime expiresDateTime;
+  final DateTime? expiresDateTime;
 
   MyOAuthToken({
-    String accessToken,
-    String refreshToken,
+    String? accessToken,
+    String? refreshToken,
     this.idToken,
     this.expiresIn,
     this.expiresDateTime,
@@ -58,7 +58,7 @@ OAuthTokenExtractor defaultMyOAuthTokenExtractor = (Response response) {
 OAuthTokenValidator defaultMyOAuthTokenValidator = (OAuthToken token) async {
   if (token is MyOAuthToken) {
 //    return true;
-    if (token.expiresDateTime.isAfter(DateTime.now())) {
+    if (token.expiresDateTime!.isAfter(DateTime.now())) {
       return true;
     }
   }
@@ -72,13 +72,14 @@ class MyBearerInterceptor extends Interceptor {
   MyBearerInterceptor(this.oauth);
 
   @override
-  Future onRequest(RequestOptions options) async {
+  void onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     final token = await oauth.fetchOrRefreshAccessToken();
     if (token is MyOAuthToken) {
       options.headers
           .addAll({"Authorization": "${token.tokenType} ${token.accessToken}"});
     }
 
-    return options;
+    handler.next(options);
   }
 }

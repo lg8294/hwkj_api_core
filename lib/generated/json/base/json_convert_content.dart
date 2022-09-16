@@ -9,11 +9,11 @@ import 'package:hwkj_api_core/src/models/ajax_result_entity.dart';
 import 'package:hwkj_api_core/src/models/response_result_entity.dart';
 
 class JsonConvert<T> {
-  T fromJson(Map<String, dynamic> json) {
+  T? fromJson(Map<String, dynamic>? json) {
     return _getFromJson<T>(runtimeType, this, json);
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic>? toJson() {
     return _getToJson<T>(runtimeType, this);
   }
 
@@ -55,23 +55,23 @@ class JsonConvert<T> {
   static M _getListChildType<M>(List data) {
     if (<AjaxResultEntity>[] is M) {
       return data
-          .map<AjaxResultEntity>((e) => AjaxResultEntity().fromJson(e))
+          .map<AjaxResultEntity?>((e) => AjaxResultEntity().fromJson(e))
           .toList() as M;
     }
     if (<ResponseResultEntity>[] is M) {
       return data
-          .map<ResponseResultEntity>((e) => ResponseResultEntity().fromJson(e))
+          .map<ResponseResultEntity?>((e) => ResponseResultEntity().fromJson(e))
           .toList() as M;
     }
 
     throw Exception("not found");
   }
 
-  static M fromJsonAsT<M>(json) {
+  static M? fromJsonAsT<M>(json) {
     if (json is List) {
       return _getListChildType<M>(json);
     } else {
-      return _fromJsonSingle<M>(json) as M;
+      return _fromJsonSingle<M>(json) as M?;
     }
   }
 }
