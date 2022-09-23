@@ -48,8 +48,7 @@ abstract class ApiClient {
         case DioErrorType.response:
           try {
             final responseResult =
-                JsonConvert.fromJsonAsT<ResponseResultEntity>(
-                    e.response!.data)!;
+                JsonConvert.fromJsonAsT<ResponseResultEntity>(e.response!.data);
             msg = responseResult.message;
             debugMsg = responseResult.developerMessage?.toString();
           } catch (_) {
@@ -87,7 +86,7 @@ abstract class ApiClient {
       final resultMap = response.data as Map;
       // 标准数据模型
       if (resultMap['Type'] != null) {
-        final r = JsonConvert.fromJsonAsT<AjaxResultEntity>(response.data)!;
+        final r = JsonConvert.fromJsonAsT<AjaxResultEntity>(response.data);
         return r;
       }
       // 分页数据模型
