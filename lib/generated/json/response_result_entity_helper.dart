@@ -17,7 +17,7 @@ responseResultEntityFromJson(
 }
 
 Map<String, dynamic> responseResultEntityToJson(ResponseResultEntity entity) {
-  final Map<String, dynamic> data = new Map<String, dynamic>();
+  final Map<String, dynamic> data = {};
   data['HResult'] = entity.result;
   data['Message'] = entity.message;
   data['DeveloperMessage'] = entity.developerMessage;

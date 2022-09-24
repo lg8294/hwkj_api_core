@@ -16,7 +16,7 @@ ajaxResultEntityFromJson(AjaxResultEntity data, Map<String, dynamic> json) {
 }
 
 Map<String, dynamic> ajaxResultEntityToJson(AjaxResultEntity entity) {
-  final Map<String, dynamic> data = new Map<String, dynamic>();
+  final Map<String, dynamic> data = {};
   data['Type'] = entity.type;
   data['Content'] = entity.content;
   data['Data'] = entity.data;
