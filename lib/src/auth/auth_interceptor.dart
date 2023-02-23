@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hwkj_api_core/hwkj_api_core.dart';
@@ -10,21 +12,7 @@ abstract class CredentialStorage {
 
 abstract class App {
   /// 设置登录状态失效
-  setLoginStateInvalid();
-}
-
-class AuthenticationHttpClientDelegate {
-  final Function lock;
-  final Function unlock;
-  final Function onRefreshTokenFailure;
-  final Dio currentHttpClient;
-
-  const AuthenticationHttpClientDelegate({
-    required this.lock,
-    required this.unlock,
-    required this.onRefreshTokenFailure,
-    required this.currentHttpClient,
-  });
+  void invalidateLoginState();
 }
 
 class AuthInterceptor extends QueuedInterceptor {
@@ -59,15 +47,12 @@ class UserAuthInterceptor extends QueuedInterceptor {
   final CredentialStorage _credentialStorage;
   final ApiConfig _apiConfig;
   final App? _app;
-  final AuthenticationHttpClientDelegate httpClientDelegate;
-
   final int maxRetryCount;
   int _retryCount = 0;
 
   UserAuthInterceptor(
     this._credentialStorage,
-    this._apiConfig,
-    this.httpClientDelegate, {
+    this._apiConfig, {
     this.maxRetryCount = 1,
     App? app,
   }) : _app = app;
@@ -78,11 +63,10 @@ class UserAuthInterceptor extends QueuedInterceptor {
     // Future onRequest(RequestOptions options) async {
 
     if (_credentialStorage.credentials == null) {
-      _app?.setLoginStateInvalid();
+      _app?.invalidateLoginState();
       return handler.reject(DioError(requestOptions: options, error: '未登录'));
     }
     if (_credentialStorage.credentials!.isExpired) {
-      httpClientDelegate.lock.call();
       if (_credentialStorage.credentials!.canRefresh) {
         Credentials? credentials;
         try {
@@ -96,17 +80,12 @@ class UserAuthInterceptor extends QueuedInterceptor {
         }
         if (credentials != null) {
           _credentialStorage.credentials = credentials;
-          httpClientDelegate.unlock.call();
         } else {
-          httpClientDelegate.onRefreshTokenFailure.call();
-          httpClientDelegate.unlock.call();
-          _app?.setLoginStateInvalid();
+          _app?.invalidateLoginState();
           throw '登录信息已失效，请重新登录';
         }
       } else {
-        httpClientDelegate.onRefreshTokenFailure.call();
-        httpClientDelegate.unlock.call();
-        _app?.setLoginStateInvalid();
+        _app?.invalidateLoginState();
         throw '登录信息已失效，请重新登录';
       }
     }
@@ -122,7 +101,7 @@ class UserAuthInterceptor extends QueuedInterceptor {
     if (response.statusCode == 401) {
       if (_retryCount >= maxRetryCount) {
         _retryCount = 0;
-        _app?.setLoginStateInvalid();
+        _app?.invalidateLoginState();
         return handler.reject(DioError(
           requestOptions: response.requestOptions,
           error: '登录信息已失效，请重新登录',
@@ -131,7 +110,6 @@ class UserAuthInterceptor extends QueuedInterceptor {
 
       _retryCount++;
       if (_credentialStorage.credentials!.canRefresh) {
-        httpClientDelegate.lock.call();
         Credentials? credential;
         try {
           credential = await _credentialStorage.credentials!.refresh(
@@ -144,33 +122,27 @@ class UserAuthInterceptor extends QueuedInterceptor {
 
         if (credential != null) {
           _credentialStorage.credentials = credential;
-          httpClientDelegate.unlock.call();
 
-          /// 重新发送请求
-          final requestOption = response.requestOptions;
-          final r = await httpClientDelegate.currentHttpClient.request(
-            requestOption.path,
-            data: requestOption.data,
-            cancelToken: requestOption.cancelToken,
-            options: Options(method: requestOption.method),
-            onSendProgress: requestOption.onSendProgress,
-            onReceiveProgress: requestOption.onReceiveProgress,
-          );
+          // 重新发送请求
+          try {
+            final requestOption = response.requestOptions;
 
-          return handler.resolve(r);
+            final r = await Dio().fetch(requestOption);
+
+            return handler.resolve(r);
+          } catch (e, trace) {
+            log('重新发送请求出错', name: 'hwkj_api_core', error: e, stackTrace: trace);
+            return handler.resolve(response);
+          }
         } else {
-          httpClientDelegate.onRefreshTokenFailure.call();
-          httpClientDelegate.unlock.call();
-          _app?.setLoginStateInvalid();
+          _app?.invalidateLoginState();
           return handler.reject(DioError(
             requestOptions: response.requestOptions,
             error: '登录信息已失效，请重新登录',
           ));
         }
       } else {
-        httpClientDelegate.onRefreshTokenFailure.call();
-        httpClientDelegate.unlock.call();
-        _app?.setLoginStateInvalid();
+        _app?.invalidateLoginState();
         return handler.reject(DioError(
           requestOptions: response.requestOptions,
           error: '登录信息已失效，请重新登录',
