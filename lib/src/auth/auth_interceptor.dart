@@ -98,59 +98,78 @@ class UserAuthInterceptor extends QueuedInterceptor {
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) async {
-    if (response.statusCode == 401) {
-      if (_retryCount >= maxRetryCount) {
-        _retryCount = 0;
-        _app?.invalidateLoginState();
-        return handler.reject(DioError(
-          requestOptions: response.requestOptions,
-          error: '登录信息已失效，请重新登录',
-        ));
-      }
-
-      _retryCount++;
-      if (_credentialStorage.credentials!.canRefresh) {
-        Credentials? credential;
-        try {
-          credential = await _credentialStorage.credentials!.refresh(
-            identifier: _apiConfig.appKey,
-            secret: _apiConfig.appSecret,
-          );
-        } catch (e, trace) {
-          debugPrintStack(stackTrace: trace, label: '$e');
-        }
-
-        if (credential != null) {
-          _credentialStorage.credentials = credential;
-
-          // 重新发送请求
-          try {
-            final requestOption = response.requestOptions;
-
-            final r = await Dio().fetch(requestOption);
-
-            return handler.resolve(r);
-          } catch (e, trace) {
-            log('重新发送请求出错', name: 'hwkj_api_core', error: e, stackTrace: trace);
-            return handler.resolve(response);
-          }
-        } else {
-          _app?.invalidateLoginState();
-          return handler.reject(DioError(
-            requestOptions: response.requestOptions,
-            error: '登录信息已失效，请重新登录',
-          ));
-        }
-      } else {
-        _app?.invalidateLoginState();
-        return handler.reject(DioError(
-          requestOptions: response.requestOptions,
-          error: '登录信息已失效，请重新登录',
-        ));
-      }
+    if (response.statusCode != 401) {
+      _retryCount = 0;
+      super.onResponse(response, handler);
+      return;
     }
 
-    _retryCount = 0;
-    super.onResponse(response, handler);
+    if (_retryCount >= maxRetryCount) {
+      _retryCount = 0;
+      _app?.invalidateLoginState();
+      _handle401Response(handler, response);
+      return;
+    }
+
+    if (!(_credentialStorage.credentials?.canRefresh ?? false)) {
+      _retryCount = 0;
+      _app?.invalidateLoginState();
+      _handle401Response(handler, response);
+      return;
+    }
+
+    _retryCount++;
+
+    Credentials? credential;
+    try {
+      credential = await _credentialStorage.credentials!.refresh(
+        identifier: _apiConfig.appKey,
+        secret: _apiConfig.appSecret,
+      );
+    } catch (e, trace) {
+      debugPrintStack(stackTrace: trace, label: '$e');
+    }
+
+    if (credential == null) {
+      _retryCount++;
+      _app?.invalidateLoginState();
+      _handle401Response(handler, response);
+      return;
+    }
+
+    _credentialStorage.credentials = credential;
+
+    // 重新发送请求
+    try {
+      final requestOption = response.requestOptions;
+
+      final r = await Dio().fetch(requestOption);
+
+      if (r.statusCode == 401) {
+        _retryCount++;
+        _app?.invalidateLoginState();
+        _handle401Response(handler, response);
+        return;
+      } else {
+        handler.resolve(r);
+        return;
+      }
+    } catch (e, trace) {
+      log('重新发送请求出错', name: 'hwkj_api_core', error: e, stackTrace: trace);
+      _retryCount = 0;
+      _app?.invalidateLoginState();
+      _handle401Response(handler, response);
+      return;
+    }
+  }
+
+  void _handle401Response(
+    ResponseInterceptorHandler handler,
+    Response<dynamic> response,
+  ) {
+    return handler.reject(DioError(
+      requestOptions: response.requestOptions,
+      error: '登录信息已失效，请重新登录',
+    ));
   }
 }
