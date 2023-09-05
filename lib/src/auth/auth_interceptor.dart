@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
@@ -60,34 +61,30 @@ class UserAuthInterceptor extends QueuedInterceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
-    // Future onRequest(RequestOptions options) async {
-
+    // 如果凭证不存在，返回 "未登录"
     if (_credentialStorage.credentials == null) {
-      _app?.invalidateLoginState();
+      Timer.run(() {
+        _app?.invalidateLoginState();
+      });
       return handler.reject(DioError(requestOptions: options, error: '未登录'));
     }
+
+    // 如果凭证过期，刷新凭证
     if (_credentialStorage.credentials!.isExpired) {
-      if (_credentialStorage.credentials!.canRefresh) {
-        Credentials? credentials;
-        try {
-          credentials = await _credentialStorage.credentials!.refresh(
-            identifier: _apiConfig.appKey,
-            secret: _apiConfig.appSecret,
-          );
-        } catch (e, trace) {
-          print(e);
-          print(trace);
-        }
-        if (credentials != null) {
-          _credentialStorage.credentials = credentials;
-        } else {
+      Credentials credentials;
+      try {
+        credentials = await _credentialStorage.credentials!.refresh(
+          identifier: _apiConfig.appKey,
+          secret: _apiConfig.appSecret,
+        );
+      } catch (e, trace) {
+        debugPrintStack(stackTrace: trace, label: '$e');
+        Timer.run(() {
           _app?.invalidateLoginState();
-          throw '登录信息已失效，请重新登录';
-        }
-      } else {
-        _app?.invalidateLoginState();
+        });
         throw '登录信息已失效，请重新登录';
       }
+      _credentialStorage.credentials = credentials;
     }
 
     final token = _credentialStorage.credentials!.accessToken;
@@ -106,21 +103,25 @@ class UserAuthInterceptor extends QueuedInterceptor {
 
     if (_retryCount >= maxRetryCount) {
       _retryCount = 0;
-      _app?.invalidateLoginState();
+      Timer.run(() {
+        _app?.invalidateLoginState();
+      });
       _handle401Response(handler, response);
       return;
     }
 
     if (!(_credentialStorage.credentials?.canRefresh ?? false)) {
       _retryCount = 0;
-      _app?.invalidateLoginState();
+      Timer.run(() {
+        _app?.invalidateLoginState();
+      });
       _handle401Response(handler, response);
       return;
     }
 
     _retryCount++;
 
-    Credentials? credential;
+    Credentials credential;
     try {
       credential = await _credentialStorage.credentials!.refresh(
         identifier: _apiConfig.appKey,
@@ -128,11 +129,10 @@ class UserAuthInterceptor extends QueuedInterceptor {
       );
     } catch (e, trace) {
       debugPrintStack(stackTrace: trace, label: '$e');
-    }
-
-    if (credential == null) {
       _retryCount++;
-      _app?.invalidateLoginState();
+      Timer.run(() {
+        _app?.invalidateLoginState();
+      });
       _handle401Response(handler, response);
       return;
     }
@@ -157,7 +157,9 @@ class UserAuthInterceptor extends QueuedInterceptor {
     } catch (e, trace) {
       log('重新发送请求出错', name: 'hwkj_api_core', error: e, stackTrace: trace);
       _retryCount = 0;
-      _app?.invalidateLoginState();
+      Timer.run(() {
+        _app?.invalidateLoginState();
+      });
       _handle401Response(handler, response);
       return;
     }
