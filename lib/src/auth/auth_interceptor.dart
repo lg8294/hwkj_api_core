@@ -147,7 +147,9 @@ class UserAuthInterceptor extends QueuedInterceptor {
 
       if (r.statusCode == 401) {
         _retryCount++;
-        _app?.invalidateLoginState();
+        Timer.run(() {
+          _app?.invalidateLoginState();
+        });
         _handle401Response(handler, response);
         return;
       } else {
