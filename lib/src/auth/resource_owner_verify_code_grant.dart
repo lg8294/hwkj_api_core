@@ -226,7 +226,7 @@ Future<Client> resourceOwnerOneClickGrant(
   var startTime = DateTime.now();
 
   var body = {
-    'grant_type': 'oneclicklogin',
+    'grant_type': 'onceclicklogin',
     'loginToken': loginToken,
   };
 
