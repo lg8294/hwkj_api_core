@@ -5,6 +5,7 @@ class APIResult<T> {
   final T? data;
   final String? msg;
   final String? debugMsg;
+  final int? timestamp;
   final bool success;
 
   bool get failure => success != true;
@@ -14,18 +15,22 @@ class APIResult<T> {
     this.data,
     this.msg,
     this.debugMsg,
+    this.timestamp,
   });
 
-  APIResult.success(this.data, {this.msg, this.debugMsg}) : success = true;
+  APIResult.success(this.data, {this.msg, this.debugMsg, this.timestamp})
+      : success = true;
 
   APIResult.failure(this.msg, [this.debugMsg])
       : success = false,
-        data = null;
+        data = null,
+        timestamp = null;
 
   APIResult.failureWithRequestError([this.debugMsg])
       : success = false,
         data = null,
-        msg = requestError;
+        msg = requestError,
+        timestamp = null;
 
   static const String requestError = '请求出错';
 
