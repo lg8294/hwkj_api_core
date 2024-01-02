@@ -27,10 +27,19 @@ abstract class ApiClient {
   APIResult<T> handleError<T>(e, {StackTrace? trace}) =>
       globalHandleError(e, trace: trace);
 
+  AjaxResultEntity parseResponseData(Response response) =>
+      globalParseResponseData(response);
+
   static APIResult<T> globalHandleError<T>(
     e, {
     StackTrace? trace,
   }) {
+    try {
+      onError?.call(e, trace);
+    } catch (e) {
+      print(e.toString());
+    }
+
     var msg;
     var debugMsg;
 
@@ -78,9 +87,6 @@ abstract class ApiClient {
     return APIResult<T>.failure(msg, debugMsg);
   }
 
-  AjaxResultEntity parseResponseData(Response response) =>
-      globalParseResponseData(response);
-
   static AjaxResultEntity globalParseResponseData(Response response) {
     if (response.data is Map) {
       final resultMap = response.data as Map;
@@ -103,23 +109,12 @@ abstract class ApiClient {
         ..type = 200;
     }
 
-    // if (response.data is String) {
-    //   try {
-    //     Map resultMap = {};
-    //     resultMap = jsonDecode(response.data);
-    //     if (resultMap['Type'] != null) {
-    //       final r = JsonConvert.fromJsonAsT<AjaxResultEntity>(resultMap);
-    //       return r;
-    //     }
-    //   } catch (e, stack) {
-    //     print(e);
-    //     print(stack);
-    //   }
-    // }
-
     return AjaxResultEntity()
       ..data = response.data
       ..type = -1
       ..content = '无法解析数据';
   }
+
+  /// 全局监听错误
+  static void Function(dynamic e, StackTrace? stackTrace)? onError;
 }
