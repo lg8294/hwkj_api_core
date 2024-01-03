@@ -24,27 +24,20 @@ abstract class ApiClient {
     _httpClient.options.validateStatus = validateStatus200_401;
   }
 
-  APIResult<T> handleError<T>(e, {StackTrace? trace}) =>
-      globalHandleError(e, trace: trace);
+  APIResult<T> handleError<T>(error, {StackTrace? trace}) =>
+      globalHandleError(error, trace: trace);
 
   AjaxResultEntity parseResponseData(Response response) =>
       globalParseResponseData(response);
 
   static APIResult<T> globalHandleError<T>(
-    e, {
+    error, {
     StackTrace? trace,
   }) {
-    try {
-      onError?.call(e, trace);
-    } catch (e) {
-      print(e.toString());
-    }
-
     var msg;
-    var debugMsg;
 
-    if (e is DioError) {
-      switch (e.type) {
+    if (error is DioError) {
+      switch (error.type) {
         case DioErrorType.connectTimeout:
           msg = "连接超时";
           break;
@@ -57,12 +50,20 @@ abstract class ApiClient {
         case DioErrorType.response:
           try {
             final responseResult =
-                JsonConvert.fromJsonAsT<ResponseResultEntity>(e.response!.data);
+                JsonConvert.fromJsonAsT<ResponseResultEntity>(
+                    error.response!.data);
             msg = responseResult.message;
-            debugMsg = responseResult.developerMessage?.toString();
           } catch (_) {
             msg = system_error_tip;
-            debugMsg = e.response!.data?.toString();
+            try {
+              if (error.error is Error) {
+                onError?.call(error.error, (error.error as Error).stackTrace);
+              } else {
+                onError?.call(error, error.stackTrace);
+              }
+            } catch (e) {
+              print(e.toString());
+            }
           }
           break;
         case DioErrorType.cancel:
@@ -70,21 +71,34 @@ abstract class ApiClient {
           break;
         case DioErrorType.other:
           msg = network_error_tip;
-          debugMsg = 'error:${e.error}';
-          if (e.error is Error) {
-            debugMsg += '\n' + 'stackTrace:${(e.error as Error).stackTrace}';
+          try {
+            if (error.error is Error) {
+              onError?.call(error.error, (error.error as Error).stackTrace);
+            } else {
+              onError?.call(error, error.stackTrace);
+            }
+          } catch (e) {
+            print(e.toString());
           }
           break;
       }
-    } else if (e is Error) {
+    } else if (error is Error) {
       msg = system_error_tip;
-      debugMsg = 'error:$e' + '\n' + 'stackTrace:${e.stackTrace.toString()}';
+      try {
+        onError?.call(error, error.stackTrace);
+      } catch (e) {
+        print(e.toString());
+      }
     } else {
       msg = system_error_tip;
-      debugMsg = 'error:$e' + '\n' + 'stackTrace:${trace?.toString()}';
+      try {
+        onError?.call(error, trace);
+      } catch (e) {
+        print(e.toString());
+      }
     }
 
-    return APIResult<T>.failure(msg, debugMsg);
+    return APIResult<T>.failure(msg);
   }
 
   static AjaxResultEntity globalParseResponseData(Response response) {
