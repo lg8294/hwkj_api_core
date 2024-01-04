@@ -47,55 +47,40 @@ abstract class ApiClient {
         case DioErrorType.receiveTimeout:
           msg = "接收数据超时";
           break;
+        case DioErrorType.cancel:
+          msg = "请求已取消";
+          break;
         case DioErrorType.response:
           try {
             final responseResult =
                 JsonConvert.fromJsonAsT<ResponseResultEntity>(
                     error.response!.data);
             msg = responseResult.message;
-          } catch (_) {
+          } catch (e, t) {
+            print('error:$e stack:$t');
             msg = system_error_tip;
-            try {
-              if (error.error is Error) {
-                onError?.call(error.error, (error.error as Error).stackTrace);
-              } else {
-                onError?.call(error, error.stackTrace);
-              }
-            } catch (e) {
-              print(e.toString());
+            if (error.error is Error) {
+              _safelyCallOnError(error.error, error.stackTrace);
+            } else {
+              _safelyCallOnError(error.message, error.stackTrace);
             }
           }
           break;
-        case DioErrorType.cancel:
-          msg = "请求已取消";
-          break;
         case DioErrorType.other:
           msg = network_error_tip;
-          try {
-            if (error.error is Error) {
-              onError?.call(error.error, (error.error as Error).stackTrace);
-            } else {
-              onError?.call(error.message, error.stackTrace);
-            }
-          } catch (e) {
-            print(e.toString());
+          if (error.error is Error) {
+            _safelyCallOnError(error.error, error.stackTrace);
+          } else {
+            _safelyCallOnError(error.message, error.stackTrace);
           }
           break;
       }
     } else if (error is Error) {
       msg = system_error_tip;
-      try {
-        onError?.call(error, error.stackTrace);
-      } catch (e) {
-        print(e.toString());
-      }
+      _safelyCallOnError(error, trace);
     } else {
       msg = system_error_tip;
-      try {
-        onError?.call(error, trace);
-      } catch (e) {
-        print(e.toString());
-      }
+      _safelyCallOnError(error, trace);
     }
 
     return APIResult<T>.failure(msg);
@@ -131,4 +116,12 @@ abstract class ApiClient {
 
   /// 全局监听错误
   static void Function(dynamic e, StackTrace? stackTrace)? onError;
+
+  static _safelyCallOnError(dynamic e, StackTrace? stackTrace) {
+    try {
+      onError?.call(e, stackTrace);
+    } catch (e) {
+      print(e.toString());
+    }
+  }
 }
