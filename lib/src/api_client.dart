@@ -75,7 +75,7 @@ abstract class ApiClient {
             if (error.error is Error) {
               onError?.call(error.error, (error.error as Error).stackTrace);
             } else {
-              onError?.call(error, error.stackTrace);
+              onError?.call(error.message, error.stackTrace);
             }
           } catch (e) {
             print(e.toString());
