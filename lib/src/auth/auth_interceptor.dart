@@ -82,7 +82,8 @@ class UserAuthInterceptor extends QueuedInterceptor {
         Timer.run(() {
           _app?.invalidateLoginState();
         });
-        throw '登录信息已失效，请重新登录';
+        return handler
+            .reject(DioError(requestOptions: options, error: '登录信息已失效，请重新登录'));
       }
       _credentialStorage.credentials = credentials;
     }
