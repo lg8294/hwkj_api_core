@@ -38,9 +38,7 @@ class HttpClientFactory {
   }
 
   /// 获取指定 API 配置的 HttpClient，如果没有传入apiConfig，使用默认API配置
-  static Dio createHttpClient({ApiConfig? apiConfig}) {
-    apiConfig ??= defaultApiConfig;
-
+  static Dio createHttpClient({required ApiConfig apiConfig}) {
     var d = Dio(BaseOptions(
       baseUrl: apiConfig.baseUrl,
     ));
