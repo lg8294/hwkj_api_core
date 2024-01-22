@@ -1,6 +1,6 @@
 name: hwkj_api_core
 description: A api core for hwkj.
-version: 1.0.0
+version: 1.0.1
 homepage: https://gitlab-dev.kangfx.com/kangfx/app/hwkj_api_core.git
 
 environment:
@@ -9,10 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  dio: ^5.4.0
+  dio: ^5.0.0
   oauth_dio: ^0.2.9
   oauth2: ^2.0.0
-  http: ^1.2.0
+  http: ^0.13.3
   http_parser: ^4.0.2
 
 dev_dependencies:
