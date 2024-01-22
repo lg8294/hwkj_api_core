@@ -8,7 +8,7 @@ import 'package:hwkj_api_core/generated/json/response_result_entity_helper.dart'
 import 'package:hwkj_api_core/src/models/ajax_result_entity.dart';
 import 'package:hwkj_api_core/src/models/response_result_entity.dart';
 
-class JsonConvert<T> {
+mixin class JsonConvert<T> {
   T fromJson(Map<String, dynamic> json) {
     return _getFromJson<T>(runtimeType, this, json);
   }

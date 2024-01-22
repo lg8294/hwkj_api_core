@@ -6,18 +6,18 @@ import 'api_config.dart';
 class HttpClientFactory {
   /// httpClient 公共配置
   static _configCommonHttpClient(Dio httpClient) {
-    httpClient.options.connectTimeout = 35000;
-    httpClient.options.sendTimeout = 35000;
-    httpClient.options.receiveTimeout = 35000;
+    httpClient.options.connectTimeout = Duration(milliseconds: 35000);
+    httpClient.options.sendTimeout = Duration(milliseconds: 35000);
+    httpClient.options.receiveTimeout = Duration(milliseconds: 35000);
   }
 
   /// 配置 httpClient 调试模式，开发环境打开日志
   static debugForHttpClient(Dio hClient) {
     // 开发环境
     if (kDebugMode) {
-      hClient.options.connectTimeout = 5000;
-      hClient.options.sendTimeout = 5000;
-      hClient.options.receiveTimeout = 5000;
+      hClient.options.connectTimeout = Duration(milliseconds: 5000);
+      hClient.options.sendTimeout = Duration(milliseconds: 5000);
+      hClient.options.receiveTimeout = Duration(milliseconds: 5000);
 
       // 打印 Log
       hClient.interceptors.add(LogInterceptor(

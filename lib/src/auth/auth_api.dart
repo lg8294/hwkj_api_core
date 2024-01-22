@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:hwkj_api_core/hwkj_api_core.dart';
 import 'package:oauth_dio/oauth_dio.dart' hide BearerInterceptor;
 

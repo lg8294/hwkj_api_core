@@ -36,21 +36,21 @@ abstract class ApiClient {
   }) {
     var msg;
 
-    if (error is DioError) {
+    if (error is DioException) {
       switch (error.type) {
-        case DioErrorType.connectTimeout:
+        case DioExceptionType.connectionTimeout:
           msg = "连接超时";
           break;
-        case DioErrorType.sendTimeout:
+        case DioExceptionType.sendTimeout:
           msg = "发送数据超时";
           break;
-        case DioErrorType.receiveTimeout:
+        case DioExceptionType.receiveTimeout:
           msg = "接收数据超时";
           break;
-        case DioErrorType.cancel:
+        case DioExceptionType.cancel:
           msg = "请求已取消";
           break;
-        case DioErrorType.response:
+        case DioExceptionType.badResponse:
           try {
             final responseResult =
                 JsonConvert.fromJsonAsT<ResponseResultEntity>(
@@ -66,7 +66,9 @@ abstract class ApiClient {
             }
           }
           break;
-        case DioErrorType.other:
+        case DioExceptionType.unknown:
+        case DioExceptionType.badCertificate:
+        case DioExceptionType.connectionError:
           msg = network_error_tip;
           if (error.error is Error) {
             _safelyCallOnError(error.error, error.stackTrace);

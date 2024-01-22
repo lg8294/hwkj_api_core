@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hwkj_api_core/hwkj_api_core.dart';
 
@@ -29,7 +28,7 @@ class AuthInterceptor extends QueuedInterceptor {
       } else {
         // return _currentDio.reject("登录信息过期，请重新登录");
         return handler.reject(
-          DioError(
+          DioException(
             requestOptions: options,
             error: '登录信息过期，请重新登录',
           ),
@@ -66,7 +65,8 @@ class UserAuthInterceptor extends QueuedInterceptor {
       Timer.run(() {
         _app?.invalidateLoginState();
       });
-      return handler.reject(DioError(requestOptions: options, error: '未登录'));
+      return handler
+          .reject(DioException(requestOptions: options, error: '未登录'));
     }
 
     // 如果凭证过期，刷新凭证
@@ -82,8 +82,8 @@ class UserAuthInterceptor extends QueuedInterceptor {
         Timer.run(() {
           _app?.invalidateLoginState();
         });
-        return handler
-            .reject(DioError(requestOptions: options, error: '登录信息已失效，请重新登录'));
+        return handler.reject(
+            DioException(requestOptions: options, error: '登录信息已失效，请重新登录'));
       }
       _credentialStorage.credentials = credentials;
     }
@@ -172,7 +172,7 @@ class UserAuthInterceptor extends QueuedInterceptor {
     ResponseInterceptorHandler handler,
     Response<dynamic> response,
   ) {
-    return handler.reject(DioError(
+    return handler.reject(DioException(
       requestOptions: response.requestOptions,
       error: '登录信息已失效，请重新登录',
     ));

@@ -1,5 +1,6 @@
 library hwkj_api_core;
 
+export 'package:dio/dio.dart';
 export 'package:oauth2/oauth2.dart';
 
 export 'src/api_client.dart';
